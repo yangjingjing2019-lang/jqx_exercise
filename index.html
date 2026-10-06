@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>普通話聲母 j、q、x 練習遊戲</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Animate.css 動畫庫 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            touch-action: manipulation;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen flex flex-col items-center justify-between p-4">
+
+    <!-- 頂部標題區 -->
+    <header class="w-full max-w-md text-center py-4">
+        <h1 class="text-2xl font-black text-indigo-700 tracking-wide flex items-center justify-center gap-2">
+            <span>🎯</span> 聲母 <span class="text-purple-600">j q x</span> 辨識挑戰
+        </h1>
+        <p class="text-xs text-gray-500 mt-1">看詞填寫指定字的聲母，輕鬆掌握發音技巧</p>
+    </header>
+
+    <!-- 主遊戲容器 -->
+    <main id="app" class="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 border border-indigo-100 flex flex-col justify-between relative overflow-hidden">
+        
+        <!-- 載入前/歡迎畫面 -->
+        <div id="start-screen" class="text-center py-8">
+            <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">
+                📚
+            </div>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">準備好挑戰了嗎？</h2>
+            <p class="text-sm text-gray-600 mb-6 px-4">總共 16 道精選練習題，目標字已清晰標記，考驗你的拼音實力！</p>
+            <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-lg rounded-2xl shadow-lg hover:opacity-95 active:scale-95 transition">
+                開始遊戲 🚀
+            </button>
+        </div>
+
+        <!-- 遊戲進行中畫面 (預設隱藏) -->
+        <div id="game-screen" class="hidden flex flex-col h-full justify-between">
+            <!-- 進度與分數列 -->
+            <div class="flex justify-between items-center mb-4 text-sm font-semibold text-gray-500 border-b pb-3">
+                <span id="progress-text" class="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full">第 1 / 16 題</span>
+                <span id="score-text" class="text-purple-600">得分：0</span>
+            </div>
+
+            <!-- 題目卡片區 -->
+            <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 text-center shadow-inner mb-6 relative border border-purple-100">
+                <span class="absolute top-3 left-4 text-xs uppercase tracking-wider text-purple-400 font-bold">請填寫標記字的聲母</span>
+                
+                <!-- 中文字詞大卡（帶有明確的目標字標記） -->
+                <div id="word-display" class="text-4xl font-black text-gray-800 my-4 tracking-wider">
+                    <!-- 動態渲染 -->
+                </div>
+
+                <p id="target-hint" class="text-xs text-purple-600 font-bold mb-3">提示：請注意紅底底線標記的字</p>
+
+                <!-- 語音朗讀按鈕 -->
+                <button onclick="speakCurrentWord()" class="inline-flex items-center gap-1.5 bg-white text-indigo-600 border border-indigo-200 px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-indigo-50 active:scale-95 transition">
+                    🔊 聽發音
+                </button>
+            </div>
+
+            <!-- 選項按鈕區 (j, q, x) -->
+            <div id="options-container" class="grid grid-cols-3 gap-3 mb-6">
+                <button onclick="selectOption('j')" class="option-btn py-5 bg-white border-2 border-indigo-200 text-indigo-700 font-black text-2xl rounded-2xl shadow-sm hover:bg-indigo-50 active:scale-95 transition">j</button>
+                <button onclick="selectOption('q')" class="option-btn py-5 bg-white border-2 border-purple-200 text-purple-700 font-black text-2xl rounded-2xl shadow-sm hover:bg-purple-50 active:scale-95 transition">q</button>
+                <button onclick="selectOption('x')" class="option-btn py-5 bg-white border-2 border-pink-200 text-pink-700 font-black text-2xl rounded-2xl shadow-sm hover:bg-pink-50 active:scale-95 transition">x</button>
+            </div>
+
+            <!-- 反饋與解答提示區 (初始隱藏) -->
+            <div id="feedback-area" class="hidden rounded-2xl p-4 text-center mb-4 animate__animated animate__fadeIn">
+                <div id="feedback-result" class="text-lg font-black mb-1"></div>
+                <div id="answer-reveal" class="text-sm text-gray-700 font-medium"></div>
+            </div>
+
+            <!-- 下一題按鈕 (初始隱藏) -->
+            <button id="next-btn" onclick="nextQuestion()" class="hidden w-full py-3.5 bg-indigo-600 text-white font-bold rounded-2xl shadow-md hover:bg-indigo-700 active:scale-95 transition">
+                下一題 ➡️
+            </button>
+        </div>
+
+        <!-- 結算畫面 (預設隱藏) -->
+        <div id="result-screen" class="hidden text-center py-6">
+            <div class="text-5xl mb-3">🏆</div>
+            <h2 class="text-2xl font-black text-gray-800 mb-2">挑戰完成！</h2>
+            <p id="final-score-text" class="text-lg text-indigo-600 font-bold mb-6">你的總得分：16 / 16</p>
+            <button onclick="restartGame()" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-lg rounded-2xl shadow-lg hover:opacity-95 active:scale-95 transition">
+                再玩一次 🔄
+            </button>
+        </div>
+
+    </main>
+
+    <!-- 頁尾版權 -->
+    <footer class="w-full max-w-md text-center py-4 text-xs text-gray-400">
+        普通話聲母練習系統 © 2026
+    </footer>
+
+    <!-- 遊戲邏輯 Script -->
+    <script>
+        // 題目數據：已修正「女主角」的 charIndex 為 2（對應「角」字）
+        const quizData = [
+            { word: "矯健", pinyin: "jiǎo jiàn", charIndex: 0, target: "j" },
+            { word: "節奏", pinyin: "jié zòu", charIndex: 0, target: "j" },
+            { word: "女主角", pinyin: "nǚ zhǔ jué", charIndex: 2, target: "j" }, // 修正：女(0) 主(1) 角(2)
+            { word: "結識", pinyin: "jié shí", charIndex: 0, target: "j" },
+            { word: "羈絆", pinyin: "jī bàn", charIndex: 0, target: "j" },
+            { word: "景致", pinyin: "jǐng zhì", charIndex: 0, target: "j" },
+            { word: "即便", pinyin: "jí biàn", charIndex: 0, target: "j" },
+            { word: "境界", pinyin: "jìng jiè", charIndex: 0, target: "j" },
+            { word: "實現", pinyin: "shí xiàn", charIndex: 1, target: "x" },
+            { word: "學習", pinyin: "xué xí", charIndex: 0, target: "x" },
+            { word: "氣象", pinyin: "qì xiàng", charIndex: 0, target: "q" },
+            { word: "親切", pinyin: "qīn qiè", charIndex: 0, target: "q" },
+            { word: "慶幸", pinyin: "qìng xìng", charIndex: 0, target: "q" },
+            { word: "爭取", pinyin: "zhēng qǔ", charIndex: 1, target: "q" },
+            { word: "志向", pinyin: "zhì xiàng", charIndex: 1, target: "x" },
+            { word: "延續", pinyin: "yán xù", charIndex: 1, target: "x" }
+        ];
+
+        let currentIndex = 0;
+        let score = 0;
+        let isAnswered = false;
+
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const wordDisplay = document.getElementById('word-display');
+        const progressText = document.getElementById('progress-text');
+        const scoreText = document.getElementById('score-text');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackResult = document.getElementById('feedback-result');
+        const answerReveal = document.getElementById('answer-reveal');
+        const nextBtn = document.getElementById('next-btn');
+        const optionBtns = document.querySelectorAll('.option-btn');
+
+        function startGame() {
+            currentIndex = 0;
+            score = 0;
+            startScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            isAnswered = false;
+            feedbackArea.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            
+            // 恢復選項按鈕狀態
+            optionBtns.forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'bg-green-100', 'border-green-500', 'bg-red-100', 'border-red-500');
+            });
+
+            const current = quizData[currentIndex];
+            
+            // 動態組裝字詞 HTML，將目標字加上顯眼的紅框或下劃線高亮標記
+            let formattedWordHTML = "";
+            for (let i = 0; i < current.word.length; i++) {
+                if (i === current.charIndex) {
+                    formattedWordHTML += `<span class="text-red-600 underline decoration-4 underline-offset-8 bg-red-50 px-2 py-1 rounded-xl mx-0.5">${current.word[i]}</span>`;
+                } else {
+                    formattedWordHTML += `<span class="text-gray-800">${current.word[i]}</span>`;
+                }
+            }
+            wordDisplay.innerHTML = formattedWordHTML;
+
+            progressText.textContent = `第 ${currentIndex + 1} / ${quizData.length} 題`;
+            scoreText.textContent = `得分：${score}`;
+
+            // 自動朗讀當前詞語
+            speakCurrentWord();
+        }
+
+        function selectOption(selectedLetter) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const current = quizData[currentIndex];
+            const isCorrect = (selectedLetter === current.target);
+
+            // 停用所有選項
+            optionBtns.forEach(btn => btn.disabled = true);
+
+            // 高亮選中的按鈕與正確按鈕
+            optionBtns.forEach(btn => {
+                if (btn.textContent.trim() === current.target) {
+                    btn.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+                }
+                if (btn.textContent.trim() === selectedLetter && !isCorrect) {
+                    btn.classList.add('bg-red-100', 'border-red-500', 'text-red-700');
+                }
+            });
+
+            // 顯示反饋
+            feedbackArea.classList.remove('hidden');
+            if (isCorrect) {
+                score += 10;
+                scoreText.textContent = `得分：${score}`;
+                feedbackResult.innerHTML = '<span class="text-green-600">🎉 答對了！</span>';
+            } else {
+                feedbackResult.innerHTML = '<span class="text-red-500">❌ 答錯了！</span>';
+            }
+
+            // 顯示正確拼音解答
+            answerReveal.innerHTML = `標記字正確拼音解答：<strong class="text-indigo-700 text-base">${current.pinyin}</strong>`;
+
+            // 顯示下一題按鈕或結算按鈕
+            if (currentIndex < quizData.length - 1) {
+                nextBtn.textContent = "下一題 ➡️";
+            } else {
+                nextBtn.textContent = "查看總成績 🏆";
+            }
+            nextBtn.classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            if (currentIndex < quizData.length) {
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            gameScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            document.getElementById('final-score-text').textContent = `你的總得分：${score} / ${quizData.length * 10}`;
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        function speakCurrentWord() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const current = quizData[currentIndex];
+                const utterance = new SpeechSynthesisUtterance(current.word);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.8;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+    </script>
+</body>
+</html>
